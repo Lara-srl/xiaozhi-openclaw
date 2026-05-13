@@ -1,0 +1,41 @@
+<screen>
+	<styles>
+		<style name="screen_bg" width="412" height="412" bg_color="#bg_dark" bg_opa="255" />
+	</styles>
+
+	<animations>
+		<timeline name="pulse">
+			<!-- Ear body: respira ampio -->
+			<animation target="ear_body" prop="height" start="220" end="260" duration="300" delay="0" />
+			<animation target="ear_body" prop="height" start="260" end="220" duration="300" delay="300" />
+			<!-- Ear cut: segue per mantenere anello -->
+			<animation target="ear_cut" prop="height" start="196" end="236" duration="300" delay="0" />
+			<animation target="ear_cut" prop="height" start="236" end="196" duration="300" delay="300" />
+			<!-- Ridge: cresce e si riduce (sfasato) -->
+			<animation target="ear_ridge" prop="height" start="80" end="130" duration="250" delay="50" />
+			<animation target="ear_ridge" prop="height" start="130" end="80" duration="250" delay="300" />
+			<!-- Dot: appare e scompare (sfasato) -->
+			<animation target="ear_dot" prop="opa" start="255" end="30" duration="300" delay="100" />
+			<animation target="ear_dot" prop="opa" start="30" end="255" duration="300" delay="400" />
+		</timeline>
+	</animations>
+
+	<view>
+		<style name="screen_bg" />
+
+		<play_timeline_event target="self" timeline="pulse" trigger="screen_loaded" />
+
+		<!-- Orecchio: ovale + cutout = anello -->
+		<ear_body name="ear_body" x="50" y="81" width="139" height="220" />
+		<ear_cut name="ear_cut" x="52" y="94" width="129" height="196" />
+
+		<!-- Onda sonora 1 (vicina) -->
+		<ear_ridge name="ear_ridge" x="238" y="146" />
+
+		<!-- Onda sonora 2 (lontana) -->
+		<ear_dot name="ear_dot" x="320" y="171" width="17" height="22" />
+
+		<!-- Label stato -->
+		<listening_label name="status_text" x="-1" y="335" />
+	</view>
+</screen>

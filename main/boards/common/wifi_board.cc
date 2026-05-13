@@ -17,6 +17,8 @@
 #include <wifi_station.h>
 #include <ssid_manager.h>
 #include "afsk_demod.h"
+#include "ada_ui_manager.h" 
+
 #ifdef CONFIG_USE_ESP_BLUFI_WIFI_PROVISIONING
 #include "blufi.h"
 #endif
@@ -36,12 +38,26 @@ WifiBoard::WifiBoard() {
         .skip_unhandled_events = true
     };
     esp_timer_create(&timer_args, &connect_timer_);
+
+    // R10.3: timer riconnessione WiFi — 30s senza WiFi → AP mode
+    esp_timer_create_args_t reconnect_args = {
+        .callback = OnWifiReconnectTimeout,
+        .arg = this,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "wifi_reconnect_timer",
+        .skip_unhandled_events = true
+    };
+    esp_timer_create(&reconnect_args, &reconnect_timer_);
 }
 
 WifiBoard::~WifiBoard() {
     if (connect_timer_) {
         esp_timer_stop(connect_timer_);
         esp_timer_delete(connect_timer_);
+    }
+    if (reconnect_timer_) {
+        esp_timer_stop(reconnect_timer_);
+        esp_timer_delete(reconnect_timer_);
     }
 }
 
@@ -54,7 +70,7 @@ void WifiBoard::StartNetwork() {
 
     // Initialize WiFi manager
     WifiManagerConfig config;
-    config.ssid_prefix = "Xiaozhi";
+    config.ssid_prefix = "aDa";
     config.language = Lang::CODE;
     wifi_manager.Initialize(config);
 
@@ -106,8 +122,10 @@ void WifiBoard::TryWifiConnect() {
 void WifiBoard::OnNetworkEvent(NetworkEvent event, const std::string& data) {
     switch (event) {
         case NetworkEvent::Connected:
-            // Stop timeout timer
+            // Stop timeout timers
             esp_timer_stop(connect_timer_);
+            esp_timer_stop(reconnect_timer_);
+            was_connected_ = true;
 #ifdef CONFIG_USE_ESP_BLUFI_WIFI_PROVISIONING
             // make sure blufi resources has been released
             Blufi::GetInstance().deinit();
@@ -123,6 +141,11 @@ void WifiBoard::OnNetworkEvent(NetworkEvent event, const std::string& data) {
             break;
         case NetworkEvent::Disconnected:
             ESP_LOGW(TAG, "WiFi disconnected");
+            // R10.3: se era connesso e non in config mode, 30s → AP mode
+            if (was_connected_ && !in_config_mode_) {
+                ESP_LOGW(TAG, "Starting 30s reconnect timer");
+                esp_timer_start_once(reconnect_timer_, 30 * 1000000ULL);
+            }
             break;
         case NetworkEvent::WifiConfigModeEnter:
             ESP_LOGI(TAG, "WiFi config mode entered");
@@ -156,6 +179,18 @@ void WifiBoard::OnWifiConnectTimeout(void* arg) {
     board->StartWifiConfigMode();
 }
 
+void WifiBoard::OnWifiReconnectTimeout(void* arg) {
+    auto* board = static_cast<WifiBoard*>(arg);
+    board->OnWifiLostTimeout();
+}
+
+void WifiBoard::OnWifiLostTimeout() {
+    // Default: enter AP config mode
+    ESP_LOGW(TAG, "WiFi reconnect timeout (30s), entering AP config mode");
+    WifiManager::GetInstance().StopStation();
+    EnterWifiConfigMode();
+}
+
 void WifiBoard::StartWifiConfigMode() {
     in_config_mode_ = true;
     // Transition to wifi configuring state
@@ -165,15 +200,15 @@ void WifiBoard::StartWifiConfigMode() {
 
     wifi_manager.StartConfigAp();
 
-    // Show config prompt after a short delay
-    Application::GetInstance().Schedule([&wifi_manager]() {
-        std::string hint = Lang::Strings::CONNECT_TO_HOTSPOT;
-        hint += wifi_manager.GetApSsid();
-        hint += Lang::Strings::ACCESS_VIA_BROWSER;
-        hint += wifi_manager.GetApWebUrl();
+    // Show AP info on Ada boot screen
+    std::string ada_hint = "Connettiti a: ";
+    ada_hint += wifi_manager.GetApSsid();                                                                                                                                                                                 
+    //ada_hint += "\nApri: ";                                                                                                                                                                                             
+    //ada_hint += wifi_manager.GetApWebUrl();
+    AdaUiManager::GetInstance().SetBootStatus(ada_hint.c_str());
 
-        Application::GetInstance().Alert(Lang::Strings::WIFI_CONFIG_MODE, hint.c_str(), "gear", Lang::Sounds::OGG_WIFICONFIG);
-    });
+    // R10.1: voce OGG_WIFICONFIG rimossa — non è la voce di Ada.
+    // Il display boot screen mostra già "Connettiti a: aDa_XXX".
 #elif CONFIG_USE_ESP_BLUFI_WIFI_PROVISIONING
     auto &blufi = Blufi::GetInstance();
     // initialize esp-blufi protocol

@@ -9,7 +9,9 @@
 class WifiBoard : public Board {
 protected:
     esp_timer_handle_t connect_timer_ = nullptr;
+    esp_timer_handle_t reconnect_timer_ = nullptr;
     bool in_config_mode_ = false;
+    bool was_connected_ = false;
     NetworkEventCallback network_event_callback_ = nullptr;
 
     virtual std::string GetBoardJson() override;
@@ -35,6 +37,13 @@ protected:
      * WiFi connection timeout callback
      */
     static void OnWifiConnectTimeout(void* arg);
+    static void OnWifiReconnectTimeout(void* arg);
+
+    /**
+     * Called when WiFi is lost for 30s. Override for board-specific behavior.
+     * Default: enter WiFi config mode (AP).
+     */
+    virtual void OnWifiLostTimeout();
 
 public:
     WifiBoard();

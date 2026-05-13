@@ -120,6 +120,9 @@ public:
      */
     void ResetProtocol();
 
+    //sposta da private 
+    void SetListeningMode(ListeningMode mode);
+
 private:
     Application();
     ~Application();
@@ -164,7 +167,7 @@ private:
     void CheckNewVersion();
     void InitializeProtocol();
     void ShowActivationCode(const std::string& code, const std::string& message);
-    void SetListeningMode(ListeningMode mode);
+    //void SetListeningMode(ListeningMode mode); sposta in pubblic
     ListeningMode GetDefaultListeningMode() const;
     
     // State change handler called by state machine

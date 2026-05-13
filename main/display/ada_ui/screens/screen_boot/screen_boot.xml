@@ -1,0 +1,15 @@
+<screen>
+	<styles>
+		<style name="screen_bg" width="412" height="412" bg_color="#bg_dark" bg_opa="255" />
+	</styles>
+
+	<view>
+		<style name="screen_bg" />
+
+		<!-- Titolo "Ada" centrato -->
+		<boot_title name="title_label" x="0" y="90" />
+
+		<!-- Sottotitolo stato (nascosto, testo impostato da firmware) -->
+		<boot_status name="status_label" x="56" y="200" />
+	</view>
+</screen>

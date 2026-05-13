@@ -1,0 +1,24 @@
+<screen>
+	<styles>
+		<style name="screen_bg" width="412" height="412" bg_color="#bg_dark" bg_opa="255" />
+	</styles>
+
+	<animations>
+		<timeline name="blink">
+			<animation target="left_eye" prop="height" start="100" end="6" duration="100" delay="0" />
+			<animation target="left_eye" prop="height" start="6" end="100" duration="100" delay="100" />
+			<animation target="right_eye" prop="height" start="100" end="6" duration="100" delay="0" />
+			<animation target="right_eye" prop="height" start="6" end="100" duration="100" delay="100" />
+		</timeline>
+	</animations>
+
+	<view>
+		<style name="screen_bg" />
+		<play_timeline_event target="self" timeline="blink" trigger="screen_loaded" />
+
+		<eye name="left_eye" x="109" y="100" />
+		<eye name="right_eye" x="234" y="100" />
+
+		<state_label name="status_text" x="-1" y="287" />
+	</view>
+</screen>

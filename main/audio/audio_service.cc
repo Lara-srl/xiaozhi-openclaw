@@ -498,7 +498,16 @@ void AudioService::PushTaskToEncodeQueue(AudioTaskType type, std::vector<int16_t
         timestamp_queue_.pop_front();
     }
 
-    audio_queue_cv_.wait(lock, [this]() { return audio_encode_queue_.size() < MAX_ENCODE_TASKS_IN_QUEUE; });
+    //audio_queue_cv_.wait(lock, [this]() { return audio_encode_queue_.size() < MAX_ENCODE_TASKS_IN_QUEUE; });
+    if (type == kAudioTaskTypeEncodeToSendQueue) {
+        // Drop frame rather than blocking — prevents AFE ringbuffer overflow
+        // when WebSocket send is slow (weak WiFi / network jitter)
+        if (audio_encode_queue_.size() >= MAX_ENCODE_TASKS_IN_QUEUE) {
+          return;
+        }
+    } else {
+        audio_queue_cv_.wait(lock, [this]() { return audio_encode_queue_.size() < MAX_ENCODE_TASKS_IN_QUEUE; });
+    }
     audio_encode_queue_.push_back(std::move(task));
     audio_queue_cv_.notify_all();
 }
@@ -732,3 +741,10 @@ bool AudioService::IsAfeWakeWord() {
     return false;
 #endif
 }
+
+void AudioService::ResetProcessor() {
+      if (audio_processor_) {
+          audio_processor_->Stop();
+          audio_processor_->Start();
+      }
+  }

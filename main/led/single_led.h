@@ -14,6 +14,13 @@ public:
     virtual ~SingleLed();
 
     void OnStateChanged() override;
+  
+    void BlinkOnce();
+    void Blink(int times, int interval_ms);
+    void StartContinuousBlink(int interval_ms);
+    void TurnOn();
+    void TurnOff();
+    void SetColor(uint8_t r, uint8_t g, uint8_t b);
 
 private:
     std::mutex mutex_;
@@ -26,13 +33,6 @@ private:
 
     void StartBlinkTask(int times, int interval_ms);
     void OnBlinkTimer();
-
-    void BlinkOnce();
-    void Blink(int times, int interval_ms);
-    void StartContinuousBlink(int interval_ms);
-    void TurnOn();
-    void TurnOff();
-    void SetColor(uint8_t r, uint8_t g, uint8_t b);
 };
 
 #endif // _SINGLE_LED_H_
